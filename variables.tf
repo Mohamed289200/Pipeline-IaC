@@ -74,9 +74,9 @@ variable "public_key" {
   sensitive   = true
 }
 
-variable "private_key_path" {
+variable "private_key_content" {
   type        = string
-  description = "Local path to the private SSH key used by the remote provisioner"
+  description = "Content of the private SSH key for remote provisioner (injected by Jenkins via TF_VAR_private_key_content)"
   sensitive   = true
 }
 

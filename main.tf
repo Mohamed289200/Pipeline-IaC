@@ -43,7 +43,7 @@ module "compute" {
   public_subnet_2  = module.networking.public_subnet_2
   target_group_arn = module.alb.target_group_arn
   public_key       = var.public_key
-  private_key_path = var.private_key_path
+  private_key_content = var.private_key_content
   asg_desired      = var.asg_desired
   asg_min          = var.asg_min
   asg_max          = var.asg_max

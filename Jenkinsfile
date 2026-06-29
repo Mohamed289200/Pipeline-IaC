@@ -12,10 +12,11 @@ pipeline {
 
     // ── Environment Variables ─────────────────────────────────────
     environment {
-        AWS_CREDENTIALS_ID = 'aws-credentials'   // Jenkins credential ID (AWS key/secret)
-        TF_VAR_FILE        = "${params.ENVIRONMENT}.tfvars"
-        BACKEND_KEY        = "${params.ENVIRONMENT}/terraform.tfstate"
-        TF_IN_AUTOMATION   = 'true'
+        AWS_CREDENTIALS_ID   = 'aws-credentials'   // Jenkins credential ID (AWS key/secret)
+        SSH_CREDENTIALS_ID   = 'ssh-private-key'   // Jenkins credential ID (SSH private key)
+        TF_VAR_FILE          = "${params.ENVIRONMENT}.tfvars"
+        BACKEND_KEY          = "${params.ENVIRONMENT}/terraform.tfstate"
+        TF_IN_AUTOMATION     = 'true'
     }
 
     stages {
@@ -72,16 +73,23 @@ pipeline {
         // ── Stage 5: Terraform Plan ───────────────────────────────
         stage('Terraform Plan') {
             steps {
-                withCredentials([[
-                    $class           : 'AmazonWebServicesCredentialsBinding',
-                    credentialsId    : "${AWS_CREDENTIALS_ID}",
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
+                withCredentials([
+                    [
+                        $class           : 'AmazonWebServicesCredentialsBinding',
+                        credentialsId    : "${AWS_CREDENTIALS_ID}",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ],
+                    sshUserPrivateKey(
+                        credentialsId  : "${SSH_CREDENTIALS_ID}",
+                        keyFileVariable: 'SSH_KEY_FILE'
+                    )
+                ]) {
                     echo "📋 Running Terraform plan for: ${TF_VAR_FILE}"
                     sh """
-                        terraform plan \
-                            -var-file="${TF_VAR_FILE}" \
+                        export TF_VAR_private_key_content="\$(cat \$SSH_KEY_FILE)"
+                        terraform plan \\
+                            -var-file="${TF_VAR_FILE}" \\
                             -out=tfplan
                     """
                 }
@@ -103,14 +111,23 @@ pipeline {
         // ── Stage 7: Terraform Apply ──────────────────────────────
         stage('Terraform Apply') {
             steps {
-                withCredentials([[
-                    $class           : 'AmazonWebServicesCredentialsBinding',
-                    credentialsId    : "${AWS_CREDENTIALS_ID}",
-                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-                ]]) {
+                withCredentials([
+                    [
+                        $class           : 'AmazonWebServicesCredentialsBinding',
+                        credentialsId    : "${AWS_CREDENTIALS_ID}",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ],
+                    sshUserPrivateKey(
+                        credentialsId  : "${SSH_CREDENTIALS_ID}",
+                        keyFileVariable: 'SSH_KEY_FILE'
+                    )
+                ]) {
                     echo "🏗️ Applying Terraform plan to: ${params.ENVIRONMENT}"
-                    sh 'terraform apply tfplan'
+                    sh """
+                        export TF_VAR_private_key_content="\$(cat \$SSH_KEY_FILE)"
+                        terraform apply tfplan
+                    """
                 }
             }
         }
