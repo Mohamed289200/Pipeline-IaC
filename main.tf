@@ -37,16 +37,16 @@ module "alb" {
 module "compute" {
   source = "./modules/compute"
 
-  instance_type    = var.instance_type
-  ec2_sg_id        = module.security.ec2_sg_id
-  public_subnet_1  = module.networking.public_subnet_1
-  public_subnet_2  = module.networking.public_subnet_2
-  target_group_arn = module.alb.target_group_arn
-  public_key       = var.public_key
+  instance_type       = var.instance_type
+  ec2_sg_id           = module.security.ec2_sg_id
+  public_subnet_1     = module.networking.public_subnet_1
+  public_subnet_2     = module.networking.public_subnet_2
+  target_group_arn    = module.alb.target_group_arn
+  public_key          = var.public_key
   private_key_content = var.private_key_content
-  asg_desired      = var.asg_desired
-  asg_min          = var.asg_min
-  asg_max          = var.asg_max
-  cpu_target_value = var.cpu_target_value
-  env              = var.env
+  asg_desired         = var.asg_desired
+  asg_min             = var.asg_min
+  asg_max             = var.asg_max
+  cpu_target_value    = var.cpu_target_value
+  env                 = var.env
 }
